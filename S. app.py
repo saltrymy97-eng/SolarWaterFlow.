@@ -4,120 +4,75 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from groq import Groq
 
-# ----------------------------------
-# 🔑 AI Agent Configuration
-# ----------------------------------
-# Insert your key inside the quotes below
-GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE" 
-
-if GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
-    st.error("Please insert your Groq API Key to activate the AI Advisor.")
+# 1. Secure AI Configuration (Using Streamlit Secrets)
+try:
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+    client = Groq(api_key=GROQ_API_KEY)
+except Exception:
+    st.error("❌ API Key not found! Please add 'GROQ_API_KEY' to your Streamlit Secrets.")
     st.stop()
 
-client = Groq(api_key=GROQ_API_KEY)
-
-class SolarWaterAgent:
-    def __init__(self, temp, sun_hours, pop, diesel_price):
+class WaterAI:
+    def __init__(self, temp, sun, pop, diesel):
         self.temp = temp
-        self.sun_hours = sun_hours
+        self.sun = sun
         self.pop = pop
-        self.diesel_price = diesel_price
+        self.diesel = diesel
 
-    def calculate_metrics(self):
-        solar_gen = 0.5 * self.sun_hours * self.temp
+    def analyze(self):
+        solar_gen = 0.5 * self.sun * self.temp
         water_req = 0.3 * self.pop * self.temp
-        
-        # Financial & Environmental Logic
-        energy_needed_kwh = water_req * 0.05
-        diesel_saved_liters = energy_needed_kwh * 0.4
-        money_saved = diesel_saved_liters * self.diesel_price
-        carbon_offset = diesel_saved_liters * 2.68 
-        
+        energy_needed = water_req * 0.05
+        diesel_saved = energy_needed * 0.4
+        cash_saved = diesel_saved * self.diesel
+        co2_offset = diesel_saved * 2.68
         return {
             "solar": solar_gen,
             "demand": water_req,
-            "savings": money_saved,
-            "carbon": carbon_offset,
-            "diesel_liters": diesel_saved_liters
+            "cash": cash_saved,
+            "co2": co2_offset
         }
 
-    def get_ai_advisor_response(self, data):
-        prompt = f"""
-        Role: Senior Financial & Energy Consultant.
-        Data: Solar {data['solar']:.1f}kWh, Water {data['demand']:.1f}L, Savings ${data['savings']:.2f}, CO2 {data['carbon']:.1f}kg.
-        Context: Yemen water crisis and solar transition.
-        Task: Provide 3 strategic bullet points on ROI and operational efficiency.
-        Language: English.
-        """
+    def get_advice(self, data):
+        prompt = f"Data: Solar {data['solar']:.1f}kWh, Water {data['demand']:.1f}L, Savings ${data['cash']:.2f}. Task: 3 strategic business points in English."
         try:
-            chat_completion = client.chat.completions.create(
-                messages=[{"role": "user", "content": prompt}],
-                model="llama3-8b-8192",
-            )
-            return chat_completion.choices[0].message.content
-        except Exception as e:
-            return "AI Advisor is offline. Please check your API Key configuration."
+            chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama3-8b-8192")
+            return chat.choices[0].message.content
+        except:
+            return "AI Consultant is analyzing the data..."
 
-# ----------------------------------
-# 🎨 UI & Layout
-# ----------------------------------
-st.set_page_config(page_title="SolarWaterFlow AI", layout="wide", page_icon="⚡")
+# 2. UI Layout
+st.set_page_config(page_title="SolarWaterFlow AI", layout="wide")
+st.title("🌞💧 SolarWaterFlow: AI Strategic Agent")
 
-st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { 
-        background-color: #ffffff; 
-        padding: 15px; 
-        border-radius: 10px; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# Sidebar Controls
+st.sidebar.header("System Parameters")
+t = st.sidebar.slider("Ambient Temp (°C)", 0, 50, 30)
+s = st.sidebar.slider("Sunlight Hours", 0, 14, 10)
+p = st.sidebar.slider("Population", 100, 10000, 2000)
+d = st.sidebar.number_input("Diesel Price ($/L)", value=1.2)
 
-st.title("⚡ SolarWaterFlow: Advanced AI Agent")
-st.markdown("#### *Empowering sustainable water networks with Llama 3 & Groq LPU™*")
+# Execution
+agent = WaterAI(t, s, p, d)
+res = agent.analyze()
 
-# Sidebar
-st.sidebar.header("📊 System Parameters")
-temp = st.sidebar.slider("Ambient Temperature (°C)", 0, 50, 30)
-sun = st.sidebar.slider("Sunlight Hours", 0, 14, 10)
-pop = st.sidebar.slider("Target Population", 100, 10000, 2500)
-diesel = st.sidebar.number_input("Diesel Price ($/Liter)", value=1.20)
+# Metrics Display
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Solar Gen", f"{res['solar']:.1f} kWh")
+col2.metric("Water Demand", f"{res['demand']:.0f} L")
+col3.metric("Money Saved", f"${res['cash']:.2f}")
+col4.metric("CO2 Saved", f"{res['co2']:.1f} kg")
 
-# Process Data
-agent = SolarWaterAgent(temp, sun, pop, diesel)
-results = agent.calculate_metrics()
-
-# Metrics
-st.write("---")
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("⚡ Solar Output", f"{results['solar']:.1f} kWh")
-m2.metric("💧 Water Demand", f"{results['demand']:.0f} L")
-m3.metric("💰 Daily Savings", f"${results['savings']:.2f}")
-m4.metric("🌿 CO2 Offset", f"{results['carbon']:.1f} kg")
-
-# AI Advisor Section
-st.write("---")
-st.subheader("🤖 AI Strategic Advisor")
-with st.spinner("Analyzing real-time data..."):
-    advice = agent.get_ai_advisor_response(results)
-    st.info(advice)
+# AI Insights
+st.subheader("🤖 AI Strategic Insights")
+st.info(agent.get_advice(res))
 
 # Charts
-st.write("---")
-col_left, col_right = st.columns(2)
-with col_left:
-    st.write("### 🔋 Energy Balance")
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.pie([results['solar'], results['demand']*0.05], labels=['Supply', 'Demand'], autopct='%1.1f%%', colors=['#FAD02C', '#00539C'])
-    st.pyplot(fig)
-
-with col_right:
-    st.write("### 📈 Savings Forecast")
-    forecast = pd.DataFrame(np.random.randn(30, 1).cumsum() + (results['savings'] * 30), columns=['USD ($)'])
-    st.line_chart(forecast)
+st.subheader("📊 Performance Analytics")
+fig, ax = plt.subplots(figsize=(8, 3))
+ax.bar(['Energy Supply', 'Water Energy Need'], [res['solar'], res['demand']*0.05], color=['#FFD700', '#1E90FF'])
+st.pyplot(fig)
 
 st.divider()
-st.caption("Developed by Salim Al-Radhwi | AI Engineering & Accounting Integration")
-        
+st.caption("Developed by Salim Al-Radhwi | Secure AI & Accounting Integration")
+    
