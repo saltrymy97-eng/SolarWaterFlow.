@@ -5,8 +5,15 @@ import matplotlib.pyplot as plt
 from groq import Groq
 
 # ----------------------------------
-# 🔑 Groq AI Agent Configuration
-# --------------------------------- = "
+# 🔑 AI Agent Configuration
+# ----------------------------------
+# Insert your key inside the quotes below
+GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE" 
+
+if GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
+    st.error("Please insert your Groq API Key to activate the AI Advisor.")
+    st.stop()
+
 client = Groq(api_key=GROQ_API_KEY)
 
 class SolarWaterAgent:
@@ -20,7 +27,7 @@ class SolarWaterAgent:
         solar_gen = 0.5 * self.sun_hours * self.temp
         water_req = 0.3 * self.pop * self.temp
         
-        # Financial Logic
+        # Financial & Environmental Logic
         energy_needed_kwh = water_req * 0.05
         diesel_saved_liters = energy_needed_kwh * 0.4
         money_saved = diesel_saved_liters * self.diesel_price
@@ -38,8 +45,8 @@ class SolarWaterAgent:
         prompt = f"""
         Role: Senior Financial & Energy Consultant.
         Data: Solar {data['solar']:.1f}kWh, Water {data['demand']:.1f}L, Savings ${data['savings']:.2f}, CO2 {data['carbon']:.1f}kg.
-        Context: Yemen water crisis and renewable energy transition.
-        Task: Provide 3-4 professional strategic bullet points on ROI and efficiency.
+        Context: Yemen water crisis and solar transition.
+        Task: Provide 3 strategic bullet points on ROI and operational efficiency.
         Language: English.
         """
         try:
@@ -49,14 +56,13 @@ class SolarWaterAgent:
             )
             return chat_completion.choices[0].message.content
         except Exception as e:
-            return f"AI Advisor is temporarily offline. System is running on local logic."
+            return "AI Advisor is offline. Please check your API Key configuration."
 
 # ----------------------------------
-# 🎨 Professional Dashboard UI
+# 🎨 UI & Layout
 # ----------------------------------
 st.set_page_config(page_title="SolarWaterFlow AI", layout="wide", page_icon="⚡")
 
-# Fixed CSS injection
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
@@ -79,44 +85,39 @@ sun = st.sidebar.slider("Sunlight Hours", 0, 14, 10)
 pop = st.sidebar.slider("Target Population", 100, 10000, 2500)
 diesel = st.sidebar.number_input("Diesel Price ($/Liter)", value=1.20)
 
-# Initialize Agent
+# Process Data
 agent = SolarWaterAgent(temp, sun, pop, diesel)
 results = agent.calculate_metrics()
 
+# Metrics
 st.write("---")
 m1, m2, m3, m4 = st.columns(4)
-m1.metric("⚡ Solar Output", f"{results['solar']:.1f} kWh", delta="Optimal")
-m2.metric("💧 Water Demand", f"{results['demand']:.0f} L", delta="Critical", delta_color="inverse")
-m3.metric("💰 Daily Savings", f"${results['savings']:.2f}", delta="ROI Positive")
-m4.metric("🌿 CO2 Offset", f"{results['carbon']:.1f} kg", delta="Eco-Friendly")
+m1.metric("⚡ Solar Output", f"{results['solar']:.1f} kWh")
+m2.metric("💧 Water Demand", f"{results['demand']:.0f} L")
+m3.metric("💰 Daily Savings", f"${results['savings']:.2f}")
+m4.metric("🌿 CO2 Offset", f"{results['carbon']:.1f} kg")
 
+# AI Advisor Section
 st.write("---")
-st.subheader("🤖 AI Strategic Advisor (Llama 3 Insights)")
+st.subheader("🤖 AI Strategic Advisor")
 with st.spinner("Analyzing real-time data..."):
     advice = agent.get_ai_advisor_response(results)
     st.info(advice)
 
+# Charts
 st.write("---")
-col_left, col_right = st.columns([1, 1])
-
+col_left, col_right = st.columns(2)
 with col_left:
-    st.write("### 🔋 Supply vs Demand Balance")
+    st.write("### 🔋 Energy Balance")
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.pie([results['solar'], results['demand']*0.05], 
-           labels=['Solar Supply', 'Energy Demand'], 
-           autopct='%1.1f%%', 
-           colors=['#FAD02C', '#00539C'],
-           startangle=90)
+    ax.pie([results['solar'], results['demand']*0.05], labels=['Supply', 'Demand'], autopct='%1.1f%%', colors=['#FAD02C', '#00539C'])
     st.pyplot(fig)
 
 with col_right:
-    st.write("### 📈 Monthly Financial ROI Projection")
-    forecast = pd.DataFrame(
-        np.random.randn(30, 1).cumsum() + (results['savings'] * 30),
-        columns=['Accumulated Savings ($)']
-    )
-    st.area_chart(forecast)
+    st.write("### 📈 Savings Forecast")
+    forecast = pd.DataFrame(np.random.randn(30, 1).cumsum() + (results['savings'] * 30), columns=['USD ($)'])
+    st.line_chart(forecast)
 
 st.divider()
-st.caption("Developed by Salim Al-Radhwi | Integrating Accounting Principles with AI Engineering")
-    
+st.caption("Developed by Salim Al-Radhwi | AI Engineering & Accounting Integration")
+        
