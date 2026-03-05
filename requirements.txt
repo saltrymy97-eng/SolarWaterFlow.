@@ -1,5 +1,1 @@
-pandas
-numpy
-matplotlib
-scikit-learn
-streamlit
+pip install streamlit pandas numpy matplotlib scikit-learn
