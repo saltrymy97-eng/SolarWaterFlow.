@@ -1,4 +1,3 @@
-# smart_water_system.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,14 +6,15 @@ from sklearn.linear_model import LinearRegression
 
 st.title("🌊 Smart Water & Energy Management Prototype")
 
-# Simulation data
+# Simulation settings
 days = 30
-pump_capacity = 200  # liters per hour
-diesel_per_hour = 2  # liters
-co2_per_liter = 0.00268  # tons CO2 per liter diesel
-carbon_price = 15  # $ per ton CO2
+pump_capacity = 200        # liters per hour
+diesel_per_hour = 2        # liters per hour
+co2_per_liter = 0.00268    # tons CO2 per liter of diesel
+carbon_price = 15          # $ per ton CO2
 
-sun_hours = np.random.uniform(4, 6, days)  # sunlight hours per day
+# Random simulation data
+sun_hours = np.random.uniform(4, 6, days)          # sunlight hours per day
 daily_demand = np.random.uniform(800, 1200, days)  # daily water demand in liters
 
 results = []
@@ -38,7 +38,7 @@ for day in range(days):
 
 df = pd.DataFrame(results)
 
-# Display simulation results
+# Display results
 st.subheader("30-Day Simulation Results")
 st.dataframe(df)
 
