@@ -6,17 +6,18 @@ from sklearn.linear_model import LinearRegression
 
 st.title("🌊 Smart Water & Energy Management Prototype")
 
-# Simulation settings
+# --- Simulation settings ---
 days = 30
 pump_capacity = 200        # liters per hour
 diesel_per_hour = 2        # liters per hour
 co2_per_liter = 0.00268    # tons CO2 per liter of diesel
 carbon_price = 15          # $ per ton CO2
 
-# Random simulation data
-sun_hours = np.random.uniform(4, 6, days)          # sunlight hours per day
-daily_demand = np.random.uniform(800, 1200, days)  # daily water demand in liters
+# --- Random simulation data ---
+sun_hours = np.random.uniform(4, 6, days)
+daily_demand = np.random.uniform(800, 1200, days)
 
+# --- Calculate outputs ---
 results = []
 for day in range(days):
     sunlight = sun_hours[day]
@@ -31,34 +32,32 @@ for day in range(days):
         "Day": day + 1,
         "Demand (L)": round(demand, 2),
         "Solar Output (L)": round(solar_output, 2),
-        "Diesel Used (L)": round(diesel_used, 2),
-        "CO2 Emission (Ton)": round(co2_emission, 4),
-        "Carbon Value ($)": round(carbon_value, 2)
+        "Diesel Used (L)": round(diesel_used, 2)
     })
 
 df = pd.DataFrame(results)
 
-# Display results
-st.subheader("30-Day Simulation Results")
-st.dataframe(df)
+# --- Display last 7 days only for simplicity ---
+st.subheader("Last 7 Days Simulation")
+st.dataframe(df.tail(7))
 
-# Predict next day's demand using Linear Regression
+# --- Predict next day's demand ---
 X = df["Day"].values.reshape(-1, 1)
 y = df["Demand (L)"].values
 model = LinearRegression()
 model.fit(X, y)
 predicted_demand = model.predict([[days + 1]])[0]
-st.write(f"Predicted water demand for Day {days + 1}: {predicted_demand:.2f} L")
+st.markdown(f"### 🔮 Predicted water demand for Day {days + 1}: {predicted_demand:.2f} L")
 
-# Plot simulation
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.plot(df["Day"], df["Demand (L)"], label="Actual Demand (L)", marker='o')
+# --- Simple plot ---
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(df["Day"], df["Demand (L)"], label="Demand (L)", marker='o')
 ax.plot(df["Day"], df["Solar Output (L)"], label="Solar Output (L)", marker='x')
 ax.plot(df["Day"], df["Diesel Used (L)"], label="Diesel Used (L)", marker='s')
-ax.scatter(days + 1, predicted_demand, color="purple", label="Predicted Demand", s=100)
+ax.scatter(days + 1, predicted_demand, color="purple", label="Predicted Demand", s=80)
 ax.set_xlabel("Day")
 ax.set_ylabel("Liters")
-ax.set_title("Water Production & Diesel Use - 30 Days Simulation + Prediction")
+ax.set_title("Water Demand & Production - 30 Days Simulation")
 ax.legend()
 ax.grid(True)
 st.pyplot(fig)
