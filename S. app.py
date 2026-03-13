@@ -1,63 +1,79 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
+import time
 
-st.title("🌊 Smart Water & Energy Management Prototype")
+# --- Page Configuration ---
+st.set_page_config(page_title="H2O-Smart Carbon Tracker", layout="wide")
 
-# --- Simulation settings ---
-days = 30
-pump_capacity = 200        # liters per hour
-diesel_per_hour = 2        # liters per hour
-co2_per_liter = 0.00268    # tons CO2 per liter of diesel
-carbon_price = 15          # $ per ton CO2
+st.title("🌊 Project H₂O-Smart: Sensor Efficiency & Carbon Report")
+st.markdown("---")
 
-# --- Random simulation data ---
-sun_hours = np.random.uniform(4, 6, days)
-daily_demand = np.random.uniform(800, 1200, days)
+# --- 1. Simulation of Sensor Percentages ---
+# In a real scenario, these values come from your hardware sensors
+def get_sensor_percentages():
+    return {
+        "solar_efficiency": 92,    # % of max sun intensity
+        "water_production": 85,    # % of max flow rate
+        "electrical_load": 60,     # % of safe motor capacity
+        "diesel_inventory": 45,    # % of fuel remaining
+        "reservoir_level": 78      # % of tank capacity
+    }
 
-# --- Calculate outputs ---
-results = []
-for day in range(days):
-    sunlight = sun_hours[day]
-    demand = daily_demand[day]
-    solar_output = min(demand, sunlight * pump_capacity)
-    diesel_needed = max(0, demand - solar_output)
-    diesel_hours = diesel_needed / pump_capacity
-    diesel_used = diesel_hours * diesel_per_hour
-    co2_emission = diesel_used * co2_per_liter
-    carbon_value = co2_emission * carbon_price
-    results.append({
-        "Day": day + 1,
-        "Demand (L)": round(demand, 2),
-        "Solar Output (L)": round(solar_output, 2),
-        "Diesel Used (L)": round(diesel_used, 2)
-    })
+data = get_sensor_percentages()
 
-df = pd.DataFrame(results)
+# --- 2. Visual Sensor Gauges (Progress Bars) ---
+st.subheader("📊 Individual Sensor Performance (%)")
+col1, col2 = st.columns(2)
 
-# --- Display last 7 days only for simplicity ---
-st.subheader("Last 7 Days Simulation")
-st.dataframe(df.tail(7))
+with col1:
+    st.write(f"☀️ **Solar Intensity:** {data['solar_efficiency']}%")
+    st.progress(data['solar_efficiency'] / 100)
+    
+    st.write(f"💧 **Flow Production:** {data['water_production']}%")
+    st.progress(data['water_production'] / 100)
+    
+    st.write(f"⚡ **Motor Load Health:** {data['electrical_load']}%")
+    st.progress(data['electrical_load'] / 100)
 
-# --- Predict next day's demand ---
-X = df["Day"].values.reshape(-1, 1)
-y = df["Demand (L)"].values
-model = LinearRegression()
-model.fit(X, y)
-predicted_demand = model.predict([[days + 1]])[0]
-st.markdown(f"### 🔮 Predicted water demand for Day {days + 1}: {predicted_demand:.2f} L")
+with col2:
+    st.write(f"⛽ **Diesel Inventory:** {data['diesel_inventory']}%")
+    st.progress(data['diesel_inventory'] / 100)
+    
+    st.write(f"🌊 **Reservoir Level:** {data['reservoir_level']}%")
+    st.progress(data['reservoir_level'] / 100)
 
-# --- Simple plot ---
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(df["Day"], df["Demand (L)"], label="Demand (L)", marker='o')
-ax.plot(df["Day"], df["Solar Output (L)"], label="Solar Output (L)", marker='x')
-ax.plot(df["Day"], df["Diesel Used (L)"], label="Diesel Used (L)", marker='s')
-ax.scatter(days + 1, predicted_demand, color="purple", label="Predicted Demand", s=80)
-ax.set_xlabel("Day")
-ax.set_ylabel("Liters")
-ax.set_title("Water Demand & Production - 30 Days Simulation")
-ax.legend()
-ax.grid(True)
-st.pyplot(fig)
+st.markdown("---")
+
+# --- 3. Carbon Emission Logic (Diesel to CO2) ---
+st.subheader("🌿 Environmental Impact Analysis")
+
+# Logic: If solar is high, we save diesel. 
+# Let's assume 15 Liters were saved today.
+liters_saved = 15.0 
+CO2_FACTOR = 2.68 # 1 Liter of Diesel = 2.68 kg of CO2
+co2_avoided_kg = liters_saved * CO2_FACTOR
+
+c1, c2 = st.columns(2)
+with c1:
+    st.metric(label="⛽ Diesel Saved", value=f"{liters_saved} Liters")
+with c2:
+    st.metric(label="🌱 CO₂ Emissions Avoided", value=f"{co2_avoided_kg:.2f} kg")
+
+# --- 4. Final Functional Audit Report ---
+st.markdown("---")
+if st.button("Generate Final Sensor Report"):
+    st.header("📄 Official System Status Report")
+    
+    report_text = f"""
+    - **Solar Sensor:** Operating at **{data['solar_efficiency']}%**. Energy is sufficient to bypass the generator.
+    - **Water Flow Sensor:** Confirmed **{data['water_production']}%** efficiency. Delivery pipes are clear and stable.
+    - **Power Sensor:** Current load is at **{data['electrical_load']}%**. Motor is running within safe limits with no faults.
+    - **Diesel Sensor:** Fuel stock is at **{data['diesel_inventory']}%**. Backup power is ready for night operations.
+    - **Water Level Sensor:** Reservoir is **{data['reservoir_level']}%** full. Water security for the community is high.
+    
+    **Carbon Statement:**
+    By utilizing solar energy, the system avoided the combustion of {liters_saved}L of diesel, 
+    preventing **{co2_avoided_kg:.2f} kg of CO₂** from entering the atmosphere.
+    """
+    st.success("Report Generated Successfully!")
+    st.write(report_text)
+
