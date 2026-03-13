@@ -1,5 +1,4 @@
 import streamlit as st
-import time
 
 # --- Page Configuration ---
 st.set_page_config(page_title="H2O-Smart Carbon Tracker", layout="wide")
@@ -7,73 +6,88 @@ st.set_page_config(page_title="H2O-Smart Carbon Tracker", layout="wide")
 st.title("🌊 Project H₂O-Smart: Sensor Efficiency & Carbon Report")
 st.markdown("---")
 
-# --- 1. Simulation of Sensor Percentages ---
-# In a real scenario, these values come from your hardware sensors
-def get_sensor_percentages():
+# --- 1. Sensor Readings Simulation ---
+def get_sensor_readings():
     return {
-        "solar_efficiency": 92,    # % of max sun intensity
-        "water_production": 85,    # % of max flow rate
-        "electrical_load": 60,     # % of safe motor capacity
-        "diesel_inventory": 45,    # % of fuel remaining
-        "reservoir_level": 78      # % of tank capacity
+        "solar_efficiency": 92,    # % of available solar energy
+        "water_flow": 85,          # % of max water flow
+        "motor_load": 60,          # % of current motor load
+        "diesel_level": 45,        # % of diesel fuel remaining
+        "reservoir_level": 78      # % of reservoir water level
     }
 
-data = get_sensor_percentages()
+data = get_sensor_readings()
 
-# --- 2. Visual Sensor Gauges (Progress Bars) ---
-st.subheader("📊 Individual Sensor Performance (%)")
+# --- 2. Sensor Limits for Alerts ---
+LIMITS = {
+    "motor_load": 80,
+    "diesel_level": 20,
+    "water_flow": 50,
+    "reservoir_level": 30  # below 30% considered low
+}
+
+# --- 3. Visual Sensor Gauges ---
+st.subheader("📊 Sensor Status & Efficiency (%)")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.write(f"☀️ **Solar Intensity:** {data['solar_efficiency']}%")
+    st.write(f"☀️ **Solar Efficiency:** {data['solar_efficiency']}%")
     st.progress(data['solar_efficiency'] / 100)
-    
-    st.write(f"💧 **Flow Production:** {data['water_production']}%")
-    st.progress(data['water_production'] / 100)
-    
-    st.write(f"⚡ **Motor Load Health:** {data['electrical_load']}%")
-    st.progress(data['electrical_load'] / 100)
+
+    st.write(f"💧 **Water Flow:** {data['water_flow']}%")
+    st.progress(data['water_flow'] / 100)
+    if data['water_flow'] < LIMITS['water_flow']:
+        st.warning("⚠️ Water flow is below optimal level!")
+
+    st.write(f"⚡ **Motor Load:** {data['motor_load']}%")
+    st.progress(data['motor_load'] / 100)
+    if data['motor_load'] > LIMITS['motor_load']:
+        st.error("❌ Motor load is too high! Check the system.")
 
 with col2:
-    st.write(f"⛽ **Diesel Inventory:** {data['diesel_inventory']}%")
-    st.progress(data['diesel_inventory'] / 100)
-    
+    st.write(f"⛽ **Diesel Level:** {data['diesel_level']}%")
+    st.progress(data['diesel_level'] / 100)
+    if data['diesel_level'] < LIMITS['diesel_level']:
+        st.warning("⚠️ Diesel running low! Refill soon.")
+
     st.write(f"🌊 **Reservoir Level:** {data['reservoir_level']}%")
     st.progress(data['reservoir_level'] / 100)
+    if data['reservoir_level'] < LIMITS['reservoir_level']:
+        st.warning("⚠️ Reservoir water level low! Refill required.")
 
+# --- 4. Environmental Impact (Carbon) ---
 st.markdown("---")
-
-# --- 3. Carbon Emission Logic (Diesel to CO2) ---
 st.subheader("🌿 Environmental Impact Analysis")
 
-# Logic: If solar is high, we save diesel. 
-# Let's assume 15 Liters were saved today.
-liters_saved = 15.0 
-CO2_FACTOR = 2.68 # 1 Liter of Diesel = 2.68 kg of CO2
-co2_avoided_kg = liters_saved * CO2_FACTOR
+daily_diesel_saved = round((data['solar_efficiency']/100)*10, 2)  # e.g., solar % * 10 liters saved
+CO2_FACTOR = 2.68  # 1 liter of diesel = 2.68 kg CO2
+daily_CO2_avoided = daily_diesel_saved * CO2_FACTOR
+monthly_diesel_saved = daily_diesel_saved * 30
+monthly_CO2_avoided = daily_CO2_avoided * 30
 
 c1, c2 = st.columns(2)
 with c1:
-    st.metric(label="⛽ Diesel Saved", value=f"{liters_saved} Liters")
+    st.metric(label="⛽ Daily Diesel Saved", value=f"{daily_diesel_saved} L")
+    st.metric(label="⛽ Estimated Monthly Diesel Saved", value=f"{monthly_diesel_saved:.2f} L")
 with c2:
-    st.metric(label="🌱 CO₂ Emissions Avoided", value=f"{co2_avoided_kg:.2f} kg")
+    st.metric(label="🌱 Daily CO₂ Avoided", value=f"{daily_CO2_avoided:.2f} kg")
+    st.metric(label="🌱 Estimated Monthly CO₂ Avoided", value=f"{monthly_CO2_avoided:.2f} kg")
 
-# --- 4. Final Functional Audit Report ---
+# --- 5. Final System Report ---
 st.markdown("---")
 if st.button("Generate Final Sensor Report"):
-    st.header("📄 Official System Status Report")
-    
-    report_text = f"""
-    - **Solar Sensor:** Operating at **{data['solar_efficiency']}%**. Energy is sufficient to bypass the generator.
-    - **Water Flow Sensor:** Confirmed **{data['water_production']}%** efficiency. Delivery pipes are clear and stable.
-    - **Power Sensor:** Current load is at **{data['electrical_load']}%**. Motor is running within safe limits with no faults.
-    - **Diesel Sensor:** Fuel stock is at **{data['diesel_inventory']}%**. Backup power is ready for night operations.
-    - **Water Level Sensor:** Reservoir is **{data['reservoir_level']}%** full. Water security for the community is high.
-    
-    **Carbon Statement:**
-    By utilizing solar energy, the system avoided the combustion of {liters_saved}L of diesel, 
-    preventing **{co2_avoided_kg:.2f} kg of CO₂** from entering the atmosphere.
-    """
-    st.success("Report Generated Successfully!")
-    st.write(report_text)
+    st.header("📄 Official H₂O-Smart System Report")
 
+    report_text = f"""
+    - ☀️ **Solar Sensor:** Operating at {data['solar_efficiency']}%. Solar energy is utilized efficiently.
+    - 💧 **Water Flow Sensor:** Current flow at {data['water_flow']}%. {'Flow is below optimal!' if data['water_flow'] < LIMITS['water_flow'] else 'Flow is stable.'}
+    - ⚡ **Motor Load Sensor:** Load at {data['motor_load']}%. {'High load detected!' if data['motor_load'] > LIMITS['motor_load'] else 'Motor operating safely.'}
+    - ⛽ **Diesel Sensor:** Fuel at {data['diesel_level']}%. {'Low fuel warning!' if data['diesel_level'] < LIMITS['diesel_level'] else 'Fuel level sufficient.'}
+    - 🌊 **Reservoir Level Sensor:** Reservoir at {data['reservoir_level']}%. {'Low water warning!' if data['reservoir_level'] < LIMITS['reservoir_level'] else 'Water level sufficient.'}
+
+    **Environmental Impact Statement:**
+    Daily diesel saved: {daily_diesel_saved} L → CO₂ avoided: {daily_CO2_avoided:.2f} kg
+    Estimated monthly diesel saved: {monthly_diesel_saved:.2f} L → CO₂ avoided monthly: {monthly_CO2_avoided:.2f} kg
+    """
+    st.success("✅ Report Generated Successfully!")
+    st.write(report_text)
